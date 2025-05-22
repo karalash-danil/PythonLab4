@@ -29,7 +29,6 @@ class ValueEditor(ttk.Frame):
         def callback(*args):
             if self.canDetect:
                 self._nametowidget(self.winfo_parent()).save()
-                print(self.inputTextvariable.get())
 
         self.inputTextvariable.trace_add("write", callback)
 
@@ -166,6 +165,7 @@ class ListsEditor(ttk.Frame):
     def select_list(self, index):
         self.close()
         self.valueEditor.canDetect = False
+
         self.CurrentList = index
 
         self.refresh_list()
