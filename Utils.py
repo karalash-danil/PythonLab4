@@ -42,10 +42,53 @@ class ListData:
         self.values = values
         self.max = max
 
+        self._FullChanged = Event()
+
+        self._AddedValue = Event()
+        self._ChangedValue = Event()
+        self._RemovedValue = Event()
+
+    def append(self, value):
+        self.values.append(value)
+        self._AddedValue.fire(len(self.values)-1, value)
+
+    def insert(self, index, value):
+        self.values.insert(index, value)
+        self._AddedValue.fire(index, value)
+
+    def pop(self, index: int):
+        if len(self.values) > index > 0:
+            v = self.values[index]
+            self.values.pop(index)
+            self._RemovedValue.fire(index, v)
+        else:
+            IndexError()
+
+    def remove(self, value):
+        i = self.values.index(value)
+        self.values.remove(value)
+        self._RemovedValue.fire(i, value)
+
+    def index(self, value) -> int:
+        return self.values.index(value)
+
+    def has(self, value) -> bool:
+        return value in self.values
+
+    def change(self, index: int, value):
+        self.values[index] = value
+        self._ChangedValue.fire(index, value)
+
 @singleton
 class ListsDataBase:
     def __init__(self):
         self.data = {}
+
+        self._Changed = Event()
+
+        self._AddedListData = Event()
+        self._ChangedListData = Event()
+        self._RemovedListData = Event()
 
     def create(self, id:str, name="", values=None, max=100):
         if not(type(id) is str): return None
@@ -54,6 +97,7 @@ class ListsDataBase:
 
         obj = ListData(name,values,max)
         self.data.update({id:obj})
+        self._AddedListData.fire(len(self.data)-1, obj)
         return obj
 
     def get(self, id:str):
@@ -88,6 +132,25 @@ class ObjectsDataBase:
         del self.data[id]
         for i in range(id,len(self.data)):
             self.data[i].id -= 1
+
+class Event:
+    def __init__(self):
+        self.funcs = []
+
+    def add(self, func):
+        self.funcs.append(func)
+
+    def remove(self, func):
+        self.funcs.remove(func)
+
+    def has(self, func):
+        return func in self.funcs
+
+    def fire(self, *args):
+        for func in self.funcs:
+            func(*args)
+
+# - Initing DataBases -----------------
 
 car1 = ObjectsDataBase().create()
 car1.model = "LX 12"

@@ -1,22 +1,16 @@
 import tkinter as tk
-from os import unlink
-from tkinter import ttk, Widget
-from tkinter import messagebox
-from xml.etree.ElementPath import prepare_self
+from tkinter import ttk
 
 import sv_ttk
 
-from Utils import *
+#------------------------
 
-from widgets.ScrollFrame import ScrollFrame
-from widgets.EntryWithLabel import EntryWithLabel
-from widgets.Gallery import Gallery
+from Utils import *
 
 
 class ValueEditor(ttk.Frame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-
         self.canDetect = False
 
         self.Title = ttk.Label(self, text="Редагування значення", justify="center", anchor="center")
@@ -39,11 +33,9 @@ class ValueEditor(ttk.Frame):
 
         self.inputTextvariable.trace_add("write", callback)
 
-
 class ListsFrame(ttk.Frame):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
-
         self.canDetect = True
 
         self.Title = ttk.Label(self, text="Операції зі Списками", justify="center", anchor="center")
@@ -76,16 +68,12 @@ class ListsFrame(ttk.Frame):
             if self.canDetect:
                 if len(event.widget.curselection()) > 0:
                     self._nametowidget(self.winfo_parent()).open(event.widget.curselection()[0])
-                #else:
-                #    self.listValues.select_set(self._nametowidget(self.winfo_parent()).CurrentValue)
 
         self.listValues.bind("<<ListboxSelect>>", callback1)
         self.lists_textvariable.trace_add("write", callback)
 
-
 class ListsEditor(ttk.Frame):
     def create(self):
-        print("F")
         try:
             self.listsFrame.canDetect = False
             self.listsFrame.listValues.insert("end", "Нове значення")
@@ -94,13 +82,9 @@ class ListsEditor(ttk.Frame):
             ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values.append("Нове значення")
 
             self.listsFrame.canDetect = True
-
             self.open(self.listsFrame.listValues.size() - 1)
-
-            print("H")
         except Exception as e:
             print(e)
-
 
     def unload(self):
         self.valueEditor.canDetect = False
@@ -110,7 +94,6 @@ class ListsEditor(ttk.Frame):
         self.unload()
 
         self.CurrentValue = index
-
         self.valueEditor.inputTextvariable.set(ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values[self.CurrentValue])
 
         self.valueEditor.canDetect = True
@@ -129,7 +112,6 @@ class ListsEditor(ttk.Frame):
 
     def open(self, index):
         self.close()
-
         self.load(index)
 
         self.listsFrame.pack_forget()
@@ -169,7 +151,6 @@ class ListsEditor(ttk.Frame):
         self.listsFrame.canDetect = False
 
         ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values.sort()
-
         self.refresh_list()
 
         self.listsFrame.canDetect = True
@@ -178,21 +159,16 @@ class ListsEditor(ttk.Frame):
         self.listsFrame.canDetect = False
 
         ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values.reverse()
-
         self.refresh_list()
 
         self.listsFrame.canDetect = True
 
     def select_list(self, index):
         self.close()
-
         self.valueEditor.canDetect = False
-
         self.CurrentList = index
 
-        self.listsFrame.listValues.delete(0, "end")
-        for i in ListsDataBase().get(list(ListsDataBase().data.keys())[index]).values:
-            self.listsFrame.listValues.insert(tk.END, i)
+        self.refresh_list()
 
         self.listsFrame.createButton.config(state="normal")
         self.listsFrame.reverseButton.config(state="normal")
@@ -210,10 +186,6 @@ class ListsEditor(ttk.Frame):
 
         self.close()
 
-
-
-#----------------------------
-
 def center_window(window):
     window.update_idletasks()
     width = window.winfo_width()
@@ -229,7 +201,6 @@ class App(tk.Tk):
         super().__init__()
         self.geometry("1000x700")
         self.title("(Тест) Редагування списків")
-        #self.eval('tk::PlaceWindow . center')
         center_window(self)
         sv_ttk.use_dark_theme()
 

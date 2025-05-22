@@ -6,13 +6,15 @@ from PIL import Image, ImageTk
 
 import sv_ttk
 
+#------------------------
+
+from Utils import *
+
 from widgets.ComboBoxWithLabel import ComboBoxWithLabel
 from widgets.ScrollFrame import ScrollFrame
 from widgets.EntryWithLabel import EntryWithLabel
 from widgets.SpinboxWithLabel import SpinboxWithLabel
 from widgets.Gallery import Gallery
-
-from Utils import *
 
 from ListsEditor import ListsEditor
 
@@ -52,7 +54,6 @@ class ObjectEditor(ttk.Frame):
         self.close_object()
 
         self.CurrentObject = obj
-
         self.hide_creator()
         self.show_editor()
 
@@ -75,8 +76,8 @@ class ObjectEditor(ttk.Frame):
         self.year.textvariable.set("0")
         self.month.textvariable.set("")
 
+        self.fuelType.textvariable.set("")
         self.color.textvariable.set("")
-
         self.gallery.current_index = 0
         self.gallery.reload()
         self.detect_changes = True
@@ -94,9 +95,7 @@ class ObjectEditor(ttk.Frame):
         self.month.textvariable.set(self.CurrentObject.month)
 
         self.fuelType.textvariable.set(self.CurrentObject.fuelType)
-
         self.color.textvariable.set(self.CurrentObject.color)
-
         self.gallery.current_index = int(self.CurrentObject.imageId)
         self.gallery.reload()
         self.detect_changes = True
@@ -113,9 +112,7 @@ class ObjectEditor(ttk.Frame):
         self.CurrentObject.month = self.month.get()
 
         self.CurrentObject.fuelType = self.fuelType.get()
-
         self.CurrentObject.color = self.color.get()
-
         self.CurrentObject.imageId = self.gallery.current_index
 
         self.CurrentCard.update()
@@ -130,7 +127,6 @@ class ObjectEditor(ttk.Frame):
             self.CurrentCard = None
 
             self.close_object()
-
 
     def __init__(self, parent):
         super().__init__(parent, width=200, height=300, padding=15, style="Card.TFrame")
@@ -195,7 +191,6 @@ class ObjectEditor(ttk.Frame):
         #-------------------
 
         self.show_creator()
-        #self.Editor.pack(padx=5, pady=5, fill="x")
 
         def changed(a,b,c):
             print(a,b,c)
@@ -246,36 +241,12 @@ class ObjectCard(ttk.Button):
         super().__init__(parent, compound="left")
         self.obj = obj
         self.editor = editor
-        #self.info_frame = tk.Frame(self)
-        #self.model_label = tk.Label(self.info_frame, text=f"{obj.model}", font=("Segoe UI", 12, "bold"))
-        #self.brand_label = tk.Label(self.info_frame, text=f"{obj.brand}", font=("Segoe UI", 10))
-
-
 
         def pressed():
             editor.open_object(obj, self)
-
         self.configure(command=pressed)
 
         self.update()
-
-        #self.configure(text=f"obj.model\nobj.brand")
-
-        #self.image = tk.Label(self, image=self.ready_image)
-
-        #self.image.pack(padx=5, pady=5, side=tk.LEFT, fill=tk.Y)
-
-        #self.info_frame.pack(padx=5, pady=5, side=tk.LEFT, fill=tk.BOTH, expand=True)
-        #self.model_label.pack(side=tk.TOP)
-        #self.brand_label.pack(side=tk.BOTTOM)
-
-
-        #self.button = tk.Button(self, bg="#33ee33", width=5, text="", font=("Segoe Fluent Icons", 14))
-        #self.button = ttk.Button(self, width=5, text="")
-        #self.button.pack(padx=5, pady=5, side=tk.RIGHT, fill=tk.Y)
-
-
-
 
 class ObjectsList(ScrollFrame):
     def __init__(self, parent):
@@ -303,7 +274,6 @@ def center_window(window):
     y = (screen_height - height) // 2
     window.geometry(f"{width}x{height}+{x}+{y}")
 
-
 class CarsFrame(ttk.Frame):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
@@ -313,13 +283,11 @@ class CarsFrame(ttk.Frame):
         self.objectsList=ObjectsList(self)
         self.objectsList.pack(padx=5, pady=5, side="right", fill="both", expand=True)
 
-
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.geometry("1000x900")
         self.title("База данных автомобілей")
-        #self.eval('tk::PlaceWindow . center')
         center_window(self)
         sv_ttk.use_dark_theme()
 
@@ -340,8 +308,6 @@ class App(tk.Tk):
 
         self.noteBook.add(self.carsFrame, text="Автомобілі")
         self.noteBook.add(self.listsEditor, text="Редагування Списків")
-
-        # -----------------------------
 
 if __name__ == "__main__":
     root = App()
