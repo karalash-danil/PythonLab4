@@ -54,7 +54,6 @@ class ListsDataBase:
 
         obj = ListData(name,values,max)
         self.data.update({id:obj})
-        self._AddedListData.fire(len(self.data)-1, obj)
         return obj
 
     def get(self, id:str):
