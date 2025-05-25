@@ -1,6 +1,7 @@
+import os.path
 import tkinter as tk
 from tkinter import ttk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 
 from PIL import Image, ImageTk
 
@@ -115,10 +116,12 @@ class ObjectEditor(ttk.Frame):
         self.CurrentObject.color = self.color.get()
         self.CurrentObject.imageId = self.gallery.current_index
 
+        ObjectsDataBase().save(self.CurrentObject)
+
         self.CurrentCard.update()
 
     def delete_object(self):
-        answer = tk.messagebox.askokcancel("Попередження", "Ви точно хочете видалити об`экт?")
+        answer = tk.messagebox.askokcancel("Попередження", "Ви точно хочете видалити об`єкт?")
 
         if answer:
             ObjectsDataBase().delete(self.CurrentObject.id)
@@ -127,6 +130,28 @@ class ObjectEditor(ttk.Frame):
             self.CurrentCard = None
 
             self.close_object()
+
+    def export_object(self):
+        defPath = os.path.abspath("export")
+        if not os.path.exists(defPath):
+            os.makedirs(defPath)
+        answer = filedialog.asksaveasfile(mode='w', defaultextension=".csv", filetypes=[("CSV", "*.csv")], initialdir=defPath, initialfile=f"{self.CurrentObject.id}.csv")
+
+        if answer is None:
+            return
+
+        ObjectsDataBase().exportObject(self.CurrentObject, answer.name)
+
+    def import_object(self):
+        defPath = os.path.abspath("export")
+        if not os.path.exists(defPath):
+            os.makedirs(defPath)
+        answer = filedialog.askopenfile(mode='r', defaultextension=".csv", filetypes=[("CSV", "*.csv")], initialdir=defPath)
+
+        if answer is None:
+            return
+
+        self.parent.objectsList.add_object(ObjectsDataBase().importObject(answer.name))
 
     def __init__(self, parent):
         super().__init__(parent, width=200, height=300, padding=15, style="Card.TFrame")
@@ -188,7 +213,13 @@ class ObjectEditor(ttk.Frame):
         self.deleteButton = ttk.Button(self.bottomPanel, text=" Видалити", command=self.delete_object)
         self.deleteButton.pack(side="left", padx=5, fill="x", expand=True)
 
+        self.exportButton = ttk.Button(self.Editor, text=" Експортувати", command=self.export_object)
+        self.exportButton.pack(padx=5, pady=5, fill="x")
+
         #-------------------
+
+        self.importButton = ttk.Button(self, text=" Імпортувати", style="Accent.TButton", command=self.import_object)
+        self.importButton.pack(padx=5, pady=5, fill="x", side="bottom")
 
         self.show_creator()
 
@@ -227,15 +258,14 @@ class ObjectCard(ttk.Button):
                             f"\nДата: {self.obj.year} | {self.obj.month}"
                             f"\nКолір: {self.obj.color}"
                             f"")
-
         try:
             self.images = ["images/1.png", "images/2.png", "images/3.png"]
 
             self.ready_image = ImageTk.PhotoImage(Image.open(self.images[self.obj.imageId]).resize((120, 80)))
             self.config(image=self.ready_image)
             self.image = self.ready_image
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
 
     def __init__(self,parent, obj, editor):
         super().__init__(parent, compound="left")

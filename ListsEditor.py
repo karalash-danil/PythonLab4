@@ -43,10 +43,21 @@ class ListsFrame(ttk.Frame):
 
         self.lists_textvariable = tk.StringVar()
         self.comboBoxLists = ttk.Combobox(self, values=ListsDataBase().getNames(), textvariable=self.lists_textvariable, state="readonly")
-        self.comboBoxLists.pack(padx=5, pady=5, fill="x")
+        self.comboBoxLists.pack(padx=5, pady=5, fill="x", expand=True)
 
-        self.listValues = tk.Listbox(self)
-        self.listValues.pack(padx=5, pady=5, fill="x")
+
+        self.frameListBox = ttk.Frame(self)
+        self.frameListBox.pack(padx=5, pady=5, fill="x")
+
+        self.listValues = tk.Listbox(self.frameListBox)
+        self.listValues.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(self.frameListBox, orient="vertical")
+        scrollbar.config(command=self.listValues.yview)
+        scrollbar.pack(side="right", fill="y")
+
+        self.listValues.config(yscrollcommand=scrollbar.set)
+
 
         self.createButton = ttk.Button(self, text=" Створити", style="Accent.TButton", command=self._nametowidget(self.winfo_parent()).create, state="disabled")
         self.createButton.pack(padx=5, pady=5, fill="x", expand=True)
@@ -76,15 +87,25 @@ class ListsEditor(ttk.Frame):
     def create(self):
         try:
             self.listsFrame.canDetect = False
-            self.listsFrame.listValues.insert("end", "Нове значення")
-            self.listsFrame.listValues.select_set(self.listsFrame.listValues.size() - 1)
-
-            ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values.append("Нове значення")
-
+            self.CurrentListData.append("Нове значення")
             self.listsFrame.canDetect = True
-            self.open(self.listsFrame.listValues.size() - 1)
+            self.open(self.CurrentListData.size() - 1)
         except Exception as e:
             print(e)
+
+    def _onAdded(self, index, value):
+        self.listsFrame.listValues.insert(index, value)
+
+    def _onRemoved(self, index, value):
+        self.listsFrame.listValues.delete(index)
+
+    def _onChanged(self, index, value):
+        self.listsFrame.listValues.delete(index)
+        self.listsFrame.listValues.insert(index, value)
+        self.listsFrame.listValues.select_set(index)
+
+    def _onFullChanged(self):
+        self.refresh_list()
 
     def unload(self):
         self.valueEditor.canDetect = False
@@ -101,18 +122,16 @@ class ListsEditor(ttk.Frame):
     def save(self):
         if not(self.CurrentValue is None):
             self.listsFrame.canDetect = False
-
-            self.listsFrame.listValues.delete(self.CurrentValue)
-            self.listsFrame.listValues.insert(self.CurrentValue, self.valueEditor.inputTextvariable.get())
-            self.listsFrame.listValues.select_set(self.CurrentValue)
-
-            ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values[self.CurrentValue] = self.valueEditor.inputTextvariable.get()
-
+            self.CurrentListData.change(self.CurrentValue, self.valueEditor.inputTextvariable.get())
             self.listsFrame.canDetect = True
 
     def open(self, index):
         self.close()
         self.load(index)
+
+        self.listsFrame.canDetect = False
+        self.listsFrame.listValues.select_set(index)
+        self.listsFrame.canDetect = True
 
         self.listsFrame.pack_forget()
         self.valueEditor.pack(anchor="w", expand=True, padx=5, pady=5, side="right")
@@ -121,6 +140,10 @@ class ListsEditor(ttk.Frame):
     def close(self):
         self.unload()
 
+        self.listsFrame.canDetect = False
+        self.listsFrame.listValues.select_clear(0, "end")
+        self.listsFrame.canDetect = True
+
         self.valueEditor.pack_forget()
         self.listsFrame.pack_forget()
         self.listsFrame.pack(expand=True, padx=5, pady=5, side="left")
@@ -128,20 +151,17 @@ class ListsEditor(ttk.Frame):
     def delete(self):
         temp = self.CurrentValue
         self.close()
-
-        self.listsFrame.listValues.delete(temp)
-        ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values.pop(temp)
+        self.CurrentListData.pop(temp)
 
     def refresh_list(self):
         self.listsFrame.canDetect = False
 
         self.listsFrame.listValues.delete(0, "end")
-        for i in ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values:
+        for i in self.CurrentListData.values:
             self.listsFrame.listValues.insert(tk.END, i)
             if self.CurrentValue is not None:
                 if i == self.valueEditor.inputTextvariable.get():
-                    index = ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values.index(
-                        self.valueEditor.inputTextvariable.get())
+                    index = self.CurrentListData.index(self.valueEditor.inputTextvariable.get())
                     self.listsFrame.listValues.select_set(index)
                     self.CurrentValue = index
 
@@ -149,24 +169,39 @@ class ListsEditor(ttk.Frame):
 
     def sort(self):
         self.listsFrame.canDetect = False
-
-        ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values.sort()
-        self.refresh_list()
-
+        self.CurrentListData.sort()
         self.listsFrame.canDetect = True
 
     def reverse(self):
         self.listsFrame.canDetect = False
-
-        ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList]).values.reverse()
-        self.refresh_list()
-
+        self.CurrentListData.reverse()
         self.listsFrame.canDetect = True
 
     def select_list(self, index):
         self.close()
         self.valueEditor.canDetect = False
         self.CurrentList = index
+
+        if self.CurrentListData is not None:
+            if self.CurrentListData._AddedValue.has(self._onAdded):
+                self.CurrentListData._AddedValue.remove(self._onAdded)
+            if self.CurrentListData._RemovedValue.has(self._onRemoved):
+                self.CurrentListData._RemovedValue.remove(self._onRemoved)
+            if self.CurrentListData._ChangedValue.has(self._onChanged):
+                self.CurrentListData._ChangedValue.remove(self._onChanged)
+            if self.CurrentListData._FullChanged.has(self._onFullChanged):
+                self.CurrentListData._FullChanged.remove(self._onFullChanged)
+
+        self.CurrentListData = ListsDataBase().get(list(ListsDataBase().data.keys())[self.CurrentList])
+
+        if not self.CurrentListData._AddedValue.has(self._onAdded):
+            self.CurrentListData._AddedValue.add(self._onAdded)
+        if not self.CurrentListData._RemovedValue.has(self._onRemoved):
+            self.CurrentListData._RemovedValue.add(self._onRemoved)
+        if not self.CurrentListData._ChangedValue.has(self._onChanged):
+            self.CurrentListData._ChangedValue.add(self._onChanged)
+        if not self.CurrentListData._FullChanged.has(self._onFullChanged):
+            self.CurrentListData._FullChanged.add(self._onFullChanged)
 
         self.refresh_list()
 
@@ -179,6 +214,7 @@ class ListsEditor(ttk.Frame):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         self.CurrentList = None
+        self.CurrentListData = None
         self.CurrentValue = None
 
         self.listsFrame = ListsFrame(self, style="Card.TFrame", padding=10)
